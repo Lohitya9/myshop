@@ -1,0 +1,67 @@
+package edu.svecw.myshop.loaders;
+
+import java.sql.ResultSet;
+import java.sql.PreparedStatement;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.io.Reader;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.sql.DriverManager;
+
+public class LoadProducts
+{
+    public void loadData() {
+        final String csvFile = "C:/Users/lohit/Desktop/product1.csv";
+        final String delimiter = ",";
+        final String insertSql = "INSERT INTO  catalog.product ( name, size, price,category_id) VALUES (?, ?, ?, ?)";
+        final String catSql = "SELECT id FROM catalog.category WHERE name = ?";
+        final String dbUrl = "jdbc:postgresql://localhost:5432/myshop";
+        final String dbUser = "postgres";
+        final String dbPass = "postgres";
+        try {
+            final Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
+            BufferedReader br;
+            String line;
+            String[] data;
+            String name;
+            String size;
+            float price;
+            String categoryName;
+            PreparedStatement pstmt_0;
+            ResultSet rs;
+            int catId;
+            PreparedStatement pstmt;
+            for (br = new BufferedReader(new FileReader(csvFile)), line = br.readLine(), line = br.readLine(); line != null; line = br.readLine()) {
+                data = line.split(delimiter);
+                name = data[0];
+                size = data[1];
+                price = Float.parseFloat(data[2]);
+                categoryName = data[3];
+                pstmt_0 = conn.prepareStatement(catSql);
+                pstmt_0.setString(1, categoryName);
+                rs = pstmt_0.executeQuery();
+                catId = 0;
+                while (rs.next()) {
+                    catId = rs.getInt(1);
+                }
+                pstmt = conn.prepareStatement(insertSql);
+                pstmt.setString(1, name);
+                pstmt.setString(2, size);
+                pstmt.setFloat(3, price);
+                pstmt.setInt(4, catId);
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+            br.close();
+            conn.close();
+            System.out.println("Data imported successfully.");
+        }
+        catch (SQLException e) {
+            System.err.println("Database error: " + e.getMessage());
+        }
+        catch (Exception e2) {
+            System.err.println("Error: " + e2.getMessage());
+        }
+    }
+}
